@@ -46,8 +46,8 @@ jobs:
           ssh -o StrictHostKeyChecking=no $EC2_USERNAME@18.140.66.16 << EOF
             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
             docker pull $DOCKER_USERNAME/django-test:latest
-            docker stop $DOCKER_USERNAME/django-test:latest || true
-            docker rm $DOCKER_USERNAME/django-test:latest || true
+            docker stop django-test || true
+            docker rm django-test || true
             docker run -d --name django-test -p 8000:8000 $DOCKER_USERNAME/django-test:latest
           EOF
     
