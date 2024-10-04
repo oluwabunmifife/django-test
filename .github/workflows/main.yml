@@ -1,0 +1,53 @@
+name: Run Docker Image on Server
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        server: 18.140.66.16
+    env:
+      EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+      EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+      
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker Image
+        run: |
+          docker compose up --build -d
+          docker compose down
+
+      - name: Tag the docker image
+        run: docker tag django-test:v1 ${{ secrets.DOCKER_USERNAME }}/django-test:latest
+
+      - name: Publish image to docker hub
+        run: docker push fifss/django-test:latest
+
+      - name: Login to servers
+        uses: omarhosny206/setup-ssh-for-ec2@v1.0.0
+        with:
+            EC2_SSH_PRIVATE_KEY: $EC2_SSH_PRIVATE_KEY
+            EC2_URL: 18.140.66.16
+
+      - name: Run docker commands on server
+        run: |
+          ssh -o StrictHostKeyChecking=no $EC2_USERNAME@18.140.66.16 << EOF
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker pull $DOCKER_USERNAME/django-test:latest
+            docker stop django-test || true
+            docker rm django-test || true
+            docker run -d --name django-test -p 8000:8000 $DOCKER_USERNAME/django-test:latest
+          EOF
+    
