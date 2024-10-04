@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        server: 18.140.66.16
+        server: [18.140.66.16]
     env:
       EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
       EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
